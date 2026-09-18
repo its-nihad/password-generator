@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b0616">
+<title>KeyVault</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 44'%3E%3Crect width='40' height='44' fill='%230b0616'/%3E%3Cpolygon points='20,3 36,12 36,32 20,41 4,32 4,12' fill='none' stroke='%2319f0ff' stroke-width='3'/%3E%3Ccircle cx='20' cy='19' r='4.5' fill='%23ff2e93'/%3E%3Crect x='18.3' y='21' width='3.4' height='9' fill='%23ff2e93'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --void: #0b0616;
+    --panel: #140a26;
+    --panel-2: #1c1035;
+    --track: #2c1c50;
+    --line: #3a2766;
+    --text: #ece6ff;
+    --dim: #a294cc;
+    --magenta: #ff2e93;
+    --cyan: #19f0ff;
+    --amber: #ffd23f;
+    --display: "Bahnschrift", "Eurostile", "Agency FB", "DIN Alternate", "Arial Narrow", system-ui, sans-serif;
+    --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html { color-scheme: dark; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 36px 16px;
+    font-family: var(--display);
+    color: var(--text);
+    background:
+      radial-gradient(60% 50% at 88% 0%, rgba(255, 46, 147, 0.24), transparent 70%),
+      radial-gradient(55% 45% at 0% 100%, rgba(25, 240, 255, 0.17), transparent 70%),
+      var(--void);
+  }
+
+  /* city-grid floor */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(25, 240, 255, 0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(25, 240, 255, 0.07) 1px, transparent 1px);
+    background-size: 48px 48px;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 20%, #000 100%);
+            mask-image: linear-gradient(to bottom, transparent 20%, #000 100%);
+  }
+
+  /* scanlines */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0.55;
+    background: repeating-linear-gradient(to bottom, transparent 0 2px, rgba(0, 0, 0, 0.18) 2px 3px);
+  }
+
+  main {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 560px;
+  }
+
+  /* ---------- header ---------- */
+  header { margin-bottom: 26px; }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .brand svg { width: 42px; height: 46px; flex: none; }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(2.4rem, 9vw, 3.4rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    text-shadow: 2px 0 rgba(255, 46, 147, 0.75), -2px 0 rgba(25, 240, 255, 0.75);
+    animation: glitch 0.8s steps(2, end) 1 both;
+  }
+
+  @keyframes glitch {
+    0%   { text-shadow: none; transform: translateX(0); }
+    12%  { text-shadow: 7px 0 var(--magenta), -7px 0 var(--cyan); transform: translateX(-3px); }
+    24%  { text-shadow: -5px 0 var(--magenta), 5px 0 var(--cyan); transform: translateX(3px); }
+    36%  { text-shadow: 3px 0 var(--magenta), -3px 0 var(--cyan); transform: translateX(0); }
+    52%  { text-shadow: -8px 0 var(--magenta), 8px 0 var(--cyan); transform: translateX(2px); }
+    68%  { text-shadow: 2px 0 var(--magenta), -2px 0 var(--cyan); transform: translateX(0); }
+    100% { text-shadow: 2px 0 rgba(255, 46, 147, 0.75), -2px 0 rgba(25, 240, 255, 0.75); transform: translateX(0); }
+  }
+
+  .tagline {
+    margin: 12px 0 0;
+    color: var(--dim);
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+
+  /* ---------- vault panel ---------- */
+  .vault {
+    --cut: 24px;
+    filter: drop-shadow(0 0 30px rgba(255, 46, 147, 0.22));
+  }
+  .vault-edge {
+    padding: 1px;
+    background: linear-gradient(135deg, var(--magenta), #6a3cff 50%, var(--cyan));
+    clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
+  }
+  .vault-body {
+    padding: 26px;
+    background: var(--panel);
+    clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
+  }
+
+  /* ---------- readout ---------- */
+  .readout {
+    display: flex;
+    align-items: center;
+    min-height: 7.6rem;
+    padding: 18px 18px 18px 16px;
+    background: #090313;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--magenta);
+    font-family: var(--mono);
+    font-size: clamp(1.15rem, 4.6vw, 1.6rem);
+    line-height: 1.55;
+    letter-spacing: 0.03em;
+    word-break: break-all;
+    user-select: all;
+    -webkit-user-select: all;
+  }
+  .readout:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; }
+  .readout .l { color: var(--text); }
+  .readout .d { color: var(--cyan); }
+  .readout .s { color: var(--magenta); }
+  .readout .scr { opacity: 0.4; }
+
+  /* ---------- buttons ---------- */
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 14px;
+  }
+  button {
+    appearance: none;
+    border: 0;
+    padding: 15px 18px;
+    font-family: var(--display);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #12061f;
+    cursor: pointer;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+    transition: filter 0.15s ease, transform 0.1s ease;
+  }
+  button:hover { filter: brightness(1.15); }
+  button:active { transform: translateY(1px); }
+  button:focus-visible { outline: 2px solid var(--amber); outline-offset: -5px; }
+  .btn-generate { background: var(--magenta); }
+  .btn-copy { background: var(--cyan); }
+
+  /* ---------- strength ---------- */
+  .strength { margin-top: 22px; }
+  .meter {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+  }
+  .meter span {
+    height: 6px;
+    background: var(--track);
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+  }
+  .meter span.on {
+    background: var(--lvl, var(--cyan));
+    box-shadow: 0 0 8px var(--lvl, var(--cyan));
+  }
+  .verdict {
+    margin: 10px 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    align-items: baseline;
+    font-size: 0.95rem;
+    color: var(--dim);
+  }
+  .verdict strong { color: var(--lvl, var(--cyan)); font-size: 1.05rem; }
+
+  /* ---------- length ---------- */
+  .field { margin-top: 26px; }
+  .field-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .field-head label { font-size: 1.05rem; font-weight: 600; }
+  .len-val {
+    font-family: var(--mono);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--cyan);
+    min-width: 2ch;
+    text-align: right;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 26px;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+    --p: 21%;
+  }
+  input[type="range"]:focus-visible { outline: 2px solid var(--amber); outline-offset: 4px; }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px;
+    background: linear-gradient(to right, var(--magenta) var(--p), var(--track) var(--p));
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 22px;
+    margin-top: -9px;
+    border: 0;
+    background: var(--cyan);
+    clip-path: polygon(0 0, 100% 0, 100% 68%, 50% 100%, 0 68%);
+  }
+  input[type="range"]::-moz-range-track { height: 4px; background: var(--track); }
+  input[type="range"]::-moz-range-progress { height: 4px; background: var(--magenta); }
+  input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 22px;
+    border: 0;
+    border-radius: 0;
+    background: var(--cyan);
+    clip-path: polygon(0 0, 100% 0, 100% 68%, 50% 100%, 0 68%);
+  }
+
+  /* ---------- character toggles ---------- */
+  .options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 22px;
+  }
+  .opt {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+  }
+  .opt:has(input:checked) { border-color: rgba(25, 240, 255, 0.6); }
+  .opt input {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    cursor: pointer;
+  }
+  .box {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    border: 1px solid var(--dim);
+    display: grid;
+    place-items: center;
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .opt input:checked + .box {
+    background: var(--cyan);
+    border-color: var(--cyan);
+    box-shadow: 0 0 10px rgba(25, 240, 255, 0.55);
+  }
+  .opt input:checked + .box::after {
+    content: "";
+    width: 9px;
+    height: 5px;
+    border-left: 2px solid #12061f;
+    border-bottom: 2px solid #12061f;
+    transform: translateY(-1px) rotate(-45deg);
+  }
+  .opt input:focus-visible + .box { outline: 2px solid var(--amber); outline-offset: 3px; }
+  .txt { display: flex; flex-direction: column; line-height: 1.25; }
+  .txt b { font-weight: 600; font-size: 0.98rem; }
+  .txt small { font-family: var(--mono); font-size: 0.8rem; color: var(--dim); margin-top: 2px; }
+  .opt-wide { grid-column: 1 / -1; }
+
+  footer {
+    margin: 20px 4px 0;
+    color: var(--dim);
+    font-size: 0.85rem;
+    line-height: 1.45;
+  }
+
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  @media (max-width: 460px) {
+    .vault-body { padding: 20px 16px; }
+    .options { grid-template-columns: 1fr; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 40 44" aria-hidden="true">
+        <polygon points="20,3 36,12 36,32 20,41 4,32 4,12" fill="none" stroke="#19f0ff" stroke-width="3" stroke-linejoin="round"/>
+        <circle cx="20" cy="19" r="4.5" fill="#ff2e93"/>
+        <rect x="18.3" y="21" width="3.4" height="9" fill="#ff2e93"/>
+      </svg>
+      <h1>KeyVault</h1>
+    </div>
+    <p class="tagline">Strong passwords, made in your browser. Nothing is sent or saved.</p>
+  </header>
+
+  <div class="vault">
+    <div class="vault-edge">
+      <div class="vault-body">
+
+        <div id="readout" class="readout" role="textbox" aria-readonly="true" aria-label="Generated password" tabindex="0"></div>
+
+        <div class="actions">
+          <button type="button" id="generate" class="btn-generate">Generate</button>
+          <button type="button" id="copy" class="btn-copy">Copy</button>
+        </div>
+        <p id="status" class="sr" aria-live="polite"></p>
+
+        <div class="strength">
+          <div class="meter" id="meter" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <p class="verdict"><strong id="verdict">Strong</strong><span id="bits"></span></p>
+        </div>
+
+        <div class="field">
+          <div class="field-head">
+            <label for="len">Length</label>
+            <span class="len-val" id="lenVal">20</span>
+          </div>
+          <input type="range" id="len" min="8" max="64" value="20">
+        </div>
+
+        <div class="options">
+          <label class="opt">
+            <input type="checkbox" id="upper" checked>
+            <span class="box" aria-hidden="true"></span>
+            <span class="txt"><b>Uppercase</b><small>A–Z</small></span>
+          </label>
+          <label class="opt">
+            <input type="checkbox" id="lower" checked>
+            <span class="box" aria-hidden="true"></span>
+            <span class="txt"><b>Lowercase</b><small>a–z</small></span>
+          </label>
+          <label class="opt">
+            <input type="checkbox" id="digits" checked>
+            <span class="box" aria-hidden="true"></span>
+            <span class="txt"><b>Numbers</b><small>0–9</small></span>
+          </label>
+          <label class="opt">
+            <input type="checkbox" id="symbols" checked>
+            <span class="box" aria-hidden="true"></span>
+            <span class="txt"><b>Symbols</b><small>!@#$%&amp;*</small></span>
+          </label>
+          <label class="opt opt-wide">
+            <input type="checkbox" id="lookalikes">
+            <span class="box" aria-hidden="true"></span>
+            <span class="txt"><b>Skip lookalike characters</b><small>I l 1 O 0 o</small></span>
+          </label>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <footer>Each character comes from your browser's cryptographic random generator. Every enabled type appears at least once.</footer>
+</main>
+
+<script>
+(() => {
+  'use strict';
+
+  const SETS = {
+    upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+    lower: 'abcdefghijklmnopqrstuvwxyz',
+    digits: '0123456789',
+    symbols: '!@#$%^&*-_=+?.,:;~'
+  };
+  const TYPES = ['upper', 'lower', 'digits', 'symbols'];
+  const LOOKALIKES = /[Il1O0o]/g;
+  const LEVELS = [
+    { name: 'Very weak',   color: '#ff2e93' },
+    { name: 'Weak',        color: '#ff2e93' },
+    { name: 'Fair',        color: '#ffd23f' },
+    { name: 'Strong',      color: '#19f0ff' },
+    { name: 'Very strong', color: '#19f0ff' }
+  ];
+
+  const $ = id => document.getElementById(id);
+  const els = {
+    upper: $('upper'), lower: $('lower'), digits: $('digits'), symbols: $('symbols'),
+    lookalikes: $('lookalikes'), len: $('len'), lenVal: $('lenVal'),
+    readout: $('readout'), generate: $('generate'), copy: $('copy'),
+    status: $('status'), meter: $('meter'), verdict: $('verdict'), bits: $('bits')
+  };
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  let current = '';
+  let raf = 0;
+  let copyTimer = 0;
+
+  /* Uniform random integer in [0, max) with rejection sampling (no modulo bias). */
+  function randInt(max) {
+    const limit = Math.floor(0x100000000 / max) * max;
+    const buf = new Uint32Array(1);
+    do { crypto.getRandomValues(buf); } while (buf[0] >= limit);
+    return buf[0] % max;
+  }
+
+  function activePools() {
+    const skip = els.lookalikes.checked;
+    return TYPES.filter(t => els[t].checked).map(t => skip ? SETS[t].replace(LOOKALIKES, '') : SETS[t]);
+  }
+
+  function build(length, pools) {
+    const all = pools.join('');
+    const out = pools.map(p => p[randInt(p.length)]);
+    while (out.length < length) out.push(all[randInt(all.length)]);
+    for (let i = out.length - 1; i > 0; i--) {
+      const j = randInt(i + 1);
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    return out.join('');
+  }
+
+  function charClass(ch) {
+    if (ch >= '0' && ch <= '9') return 'd';
+    if ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')) return 'l';
+    return 's';
+  }
+
+  function render(text, lockedUpTo) {
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < text.length; i++) {
+      const span = document.createElement('span');
+      span.className = charClass(text[i]) + (i >= lockedUpTo ? ' scr' : '');
+      span.textContent = text[i];
+      frag.appendChild(span);
+    }
+    els.readout.replaceChildren(frag);
+  }
+
+  /* Decrypt-style reveal: characters lock in from left to right. */
+  function reveal(text, animate) {
+    cancelAnimationFrame(raf);
+    if (!animate || reduceMotion.matches) { render(text, text.length); return; }
+    const glyphs = SETS.upper + SETS.lower + SETS.digits + SETS.symbols;
+    const duration = 450 + text.length * 9;
+    const start = performance.now();
+    const step = now => {
+      const t = Math.min(1, (now - start) / duration);
+      const locked = Math.floor(t * text.length);
+      let shown = '';
+      for (let i = 0; i < text.length; i++) {
+        shown += i < locked ? text[i] : glyphs[Math.floor(Math.random() * glyphs.length)];
+      }
+      render(shown, locked);
+      if (t < 1) raf = requestAnimationFrame(step);
+      else render(text, text.length);
+    };
+    raf = requestAnimationFrame(step);
+  }
+
+  function updateMeter(length, poolSize) {
+    const bits = length * Math.log2(poolSize);
+    const level = bits < 28 ? 0 : bits < 40 ? 1 : bits < 60 ? 2 : bits < 80 ? 3 : 4;
+    const { name, color } = LEVELS[level];
+    els.meter.style.setProperty('--lvl', color);
+    els.verdict.parentElement.style.setProperty('--lvl', color);
+    [...els.meter.children].forEach((seg, i) => seg.classList.toggle('on', i <= level));
+    els.verdict.textContent = name;
+    els.bits.textContent = Math.round(bits) + ' bits of entropy';
+  }
+
+  function refresh(animate) {
+    const length = +els.len.value;
+    const pools = activePools();
+    current = build(length, pools);
+    reveal(current, animate);
+    updateMeter(length, pools.join('').length);
+    els.lenVal.textContent = length;
+    els.len.style.setProperty('--p', ((length - 8) / (64 - 8) * 100) + '%');
+  }
+
+  async function copyToClipboard() {
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(current);
+      ok = true;
+    } catch (e) {
+      const ta = document.createElement('textarea');
+      ta.value = current;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+      ta.remove();
+    }
+    els.copy.textContent = ok ? 'Copied' : 'Copy failed';
+    els.status.textContent = ok ? 'Password copied to clipboard.' : 'Copy failed. Select the password and copy it manually.';
+    clearTimeout(copyTimer);
+    copyTimer = setTimeout(() => { els.copy.textContent = 'Copy'; els.status.textContent = ''; }, 1800);
+  }
+
+  /* events */
+  els.generate.addEventListener('click', () => refresh(true));
+  els.copy.addEventListener('click', copyToClipboard);
+  els.len.addEventListener('input', () => refresh(false));
+  TYPES.forEach(t => els[t].addEventListener('change', e => {
+    // keep at least one character type enabled
+    if (!TYPES.some(k => els[k].checked)) e.target.checked = true;
+    refresh(false);
+  }));
+  els.lookalikes.addEventListener('change', () => refresh(false));
+
+  refresh(true);
+})();
+</script>
+</body>
+</html>
