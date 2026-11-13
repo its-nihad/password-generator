@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b0616">
+<meta name="description" content="KeyVault generates strong random passwords in your browser. Nothing is sent or saved.">
+<title>KeyVault | Strong passwords, made in your browser</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 44'%3E%3Crect width='40' height='44' fill='%230b0616'/%3E%3Cpolygon points='20,3 36,12 36,32 20,41 4,32 4,12' fill='none' stroke='%2319f0ff' stroke-width='3'/%3E%3Ccircle cx='20' cy='19' r='4.5' fill='%23ff2e93'/%3E%3Crect x='18.3' y='21' width='3.4' height='9' fill='%23ff2e93'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --void: #0b0616;
+    --panel: #140a26;
+    --panel-2: #1c1035;
+    --line: #3a2766;
+    --text: #ece6ff;
+    --dim: #a294cc;
+    --magenta: #ff2e93;
+    --cyan: #19f0ff;
+    --amber: #ffd23f;
+    --display: "Bahnschrift", "Eurostile", "Agency FB", "DIN Alternate", "Arial Narrow", system-ui, sans-serif;
+    --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { color-scheme: dark; scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: var(--display);
+    color: var(--text);
+    line-height: 1.5;
+    background:
+      radial-gradient(60% 45% at 90% 0%, rgba(255, 46, 147, 0.24), transparent 70%),
+      radial-gradient(55% 40% at 0% 60%, rgba(25, 240, 255, 0.14), transparent 70%),
+      var(--void);
+  }
+  body::before {
+    content: "";
+    position: fixed; inset: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(25, 240, 255, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(25, 240, 255, 0.06) 1px, transparent 1px);
+    background-size: 48px 48px;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 10%, #000 100%);
+            mask-image: linear-gradient(to bottom, transparent 10%, #000 100%);
+  }
+  body::after {
+    content: "";
+    position: fixed; inset: 0; pointer-events: none; z-index: 5; opacity: 0.5;
+    background: repeating-linear-gradient(to bottom, transparent 0 2px, rgba(0, 0, 0, 0.18) 2px 3px);
+  }
+  a { color: inherit; }
+  .wrap { position: relative; z-index: 1; width: min(1040px, 100% - 32px); margin-inline: auto; }
+
+  /* nav */
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 22px 0; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.3rem; text-decoration: none; }
+  .logo svg { width: 28px; height: 31px; }
+  .nav-links { display: flex; gap: 22px; align-items: center; font-size: 0.98rem; }
+  .nav-links a { text-decoration: none; color: var(--dim); transition: color 0.15s; }
+  .nav-links a:hover { color: var(--cyan); }
+  .nav-links .nav-cta { color: var(--cyan); border: 1px solid var(--cyan); padding: 7px 14px; }
+  .nav-links .nav-cta:hover { background: var(--cyan); color: #12061f; }
+
+  /* hero */
+  .hero { padding: 64px 0 56px; display: grid; gap: 44px; grid-template-columns: 1.1fr 0.9fr; align-items: center; }
+  .eyebrow { font-family: var(--mono); font-size: 0.85rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--magenta); margin: 0 0 14px; }
+  h1 {
+    margin: 0;
+    font-size: clamp(2.6rem, 8vw, 4.4rem);
+    font-weight: 800;
+    line-height: 1.02;
+    text-shadow: 2px 0 rgba(255, 46, 147, 0.7), -2px 0 rgba(25, 240, 255, 0.7);
+    animation: glitch 0.8s steps(2, end) 1 both;
+  }
+  @keyframes glitch {
+    0%   { text-shadow: none; transform: translateX(0); }
+    14%  { text-shadow: 7px 0 var(--magenta), -7px 0 var(--cyan); transform: translateX(-3px); }
+    30%  { text-shadow: -5px 0 var(--magenta), 5px 0 var(--cyan); transform: translateX(3px); }
+    50%  { text-shadow: 3px 0 var(--magenta), -3px 0 var(--cyan); transform: translateX(0); }
+    70%  { text-shadow: -7px 0 var(--magenta), 7px 0 var(--cyan); transform: translateX(2px); }
+    100% { text-shadow: 2px 0 rgba(255, 46, 147, 0.7), -2px 0 rgba(25, 240, 255, 0.7); transform: translateX(0); }
+  }
+  .lead { margin: 20px 0 0; max-width: 34ch; font-size: 1.2rem; color: var(--dim); }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+  .btn {
+    display: inline-block; padding: 15px 26px; text-decoration: none; font-weight: 700; font-size: 1.05rem; color: #12061f;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+    transition: filter 0.15s, transform 0.1s;
+  }
+  .btn:hover { filter: brightness(1.15); }
+  .btn:active { transform: translateY(1px); }
+  .btn:focus-visible, a:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; }
+  .btn-main { background: var(--magenta); }
+  .btn-alt { background: var(--cyan); }
+
+  /* hero preview card */
+  .edge {
+    --cut: 22px;
+    padding: 1px;
+    background: linear-gradient(135deg, var(--magenta), #6a3cff 50%, var(--cyan));
+    clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
+    filter: drop-shadow(0 0 28px rgba(255, 46, 147, 0.22));
+  }
+  .edge > .inner {
+    padding: 22px;
+    background: var(--panel);
+    clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
+  }
+  .preview-label { font-family: var(--mono); font-size: 0.78rem; color: var(--dim); letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 10px; }
+  .sample {
+    min-height: 5.6rem; display: flex; align-items: center; padding: 14px 14px;
+    background: #090313; border: 1px solid var(--line); border-left: 3px solid var(--magenta);
+    font-family: var(--mono); font-size: 1.2rem; line-height: 1.5; word-break: break-all; letter-spacing: 0.03em;
+  }
+  .sample .d { color: var(--cyan); }
+  .sample .s { color: var(--magenta); }
+  .sample .scr { opacity: 0.4; }
+  .bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-top: 16px; }
+  .bar i { height: 6px; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+  .bar-note { margin: 10px 0 0; font-size: 0.92rem; color: var(--dim); }
+  .bar-note b { color: var(--cyan); }
+
+  /* sections */
+  section { padding: 44px 0; }
+  h2 { margin: 0 0 8px; font-size: clamp(1.7rem, 5vw, 2.3rem); font-weight: 800; }
+  .sub { margin: 0 0 28px; color: var(--dim); max-width: 52ch; }
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); }
+  .card { padding: 22px; background: var(--panel); border: 1px solid var(--line); border-top: 2px solid var(--cyan); }
+  .card:nth-child(2) { border-top-color: var(--magenta); }
+  .card h3 { margin: 0 0 8px; font-size: 1.15rem; }
+  .card p { margin: 0; color: var(--dim); font-size: 0.98rem; }
+  .steps { display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); counter-reset: s; }
+  .step { position: relative; padding: 22px 22px 22px 22px; background: var(--panel-2); border-left: 3px solid var(--magenta); }
+  .step::before { counter-increment: s; content: "0" counter(s); display: block; font-family: var(--mono); font-size: 1.6rem; font-weight: 700; color: var(--cyan); margin-bottom: 6px; }
+  .step p { margin: 0; color: var(--dim); }
+  .step b { color: var(--text); }
+
+  .final { text-align: center; padding: 56px 0 40px; }
+  .final p { margin: 0 auto 26px; color: var(--dim); max-width: 44ch; }
+
+  footer { position: relative; z-index: 1; border-top: 1px solid var(--line); padding: 22px 0 36px; color: var(--dim); font-size: 0.9rem; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+  footer a { text-decoration: none; border-bottom: 1px solid var(--line); }
+  footer a:hover { color: var(--cyan); border-color: var(--cyan); }
+
+  @media (max-width: 820px) {
+    .hero { grid-template-columns: 1fr; padding-top: 36px; }
+    .grid, .steps { grid-template-columns: 1fr; }
+    .nav-links a:not(.nav-cta) { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav>
+    <a class="logo" href="home.html" aria-label="KeyVault home">
+      <svg viewBox="0 0 40 44" aria-hidden="true">
+        <polygon points="20,3 36,12 36,32 20,41 4,32 4,12" fill="none" stroke="#19f0ff" stroke-width="3" stroke-linejoin="round"/>
+        <circle cx="20" cy="19" r="4.5" fill="#ff2e93"/>
+        <rect x="18.3" y="21" width="3.4" height="9" fill="#ff2e93"/>
+      </svg>
+      KeyVault
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a class="nav-cta" href="index.html">Open app</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Password generator</p>
+      <h1>Lock it down.</h1>
+      <p class="lead">Strong, random passwords made right in your browser. Nothing is sent. Nothing is saved.</p>
+      <div class="cta-row">
+        <a class="btn btn-main" href="index.html">Generate a password</a>
+        <a class="btn btn-alt" href="#how">See how it works</a>
+      </div>
+    </div>
+
+    <div class="edge" aria-hidden="true">
+      <div class="inner">
+        <p class="preview-label">Sample output</p>
+        <div class="sample" id="sample"></div>
+        <div class="bar"><i></i><i></i><i></i><i></i><i></i></div>
+        <p class="bar-note"><b>Very strong</b> &middot; <span id="bits">131</span> bits of entropy</p>
+      </div>
+    </div>
+  </header>
+
+  <section id="features">
+    <h2>Built to be trusted</h2>
+    <p class="sub">A small tool that does one job and keeps out of your way.</p>
+    <div class="grid">
+      <div class="card">
+        <h3>Truly random</h3>
+        <p>Every character comes from your browser's cryptographic random generator, with no modulo bias.</p>
+      </div>
+      <div class="card">
+        <h3>Private by design</h3>
+        <p>It runs offline in the page. No servers, no tracking, no storage. Close the tab and it is gone.</p>
+      </div>
+      <div class="card">
+        <h3>Yours to tune</h3>
+        <p>Pick a length from 8 to 64, choose your character types, and skip lookalikes like I, l, 1, O and 0.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <h2>How it works</h2>
+    <p class="sub">Three moves and you are done.</p>
+    <div class="steps">
+      <div class="step"><p><b>Set the rules.</b> Slide the length and toggle the character types you need.</p></div>
+      <div class="step"><p><b>Generate.</b> Watch the password decrypt on screen with a live strength meter.</p></div>
+      <div class="step"><p><b>Copy.</b> One tap sends it to your clipboard, ready for your password manager.</p></div>
+    </div>
+  </section>
+
+  <section class="final">
+    <h2>Ready when you are</h2>
+    <p>Your next password takes about two seconds.</p>
+    <a class="btn btn-main" href="index.html">Open KeyVault</a>
+  </section>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>KeyVault &middot; Runs entirely in your browser</span>
+    <a href="https://github.com/its-nihad" rel="noopener">GitHub</a>
+  </div>
+</footer>
+
+<script>
+(() => {
+  'use strict';
+  const sample = document.getElementById('sample');
+  const bitsEl = document.getElementById('bits');
+  const pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*-_=+?';
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const LEN = 20;
+
+  const randInt = max => {
+    const limit = Math.floor(0x100000000 / max) * max;
+    const b = new Uint32Array(1);
+    do { crypto.getRandomValues(b); } while (b[0] >= limit);
+    return b[0] % max;
+  };
+  const make = () => Array.from({ length: LEN }, () => pool[randInt(pool.length)]).join('');
+  const cls = ch => /[0-9]/.test(ch) ? 'd' : /[A-Za-z]/.test(ch) ? 'l' : 's';
+
+  const paint = (text, locked) => {
+    const frag = document.createDocumentFragment();
+    [...text].forEach((ch, i) => {
+      const s = document.createElement('span');
+      s.className = cls(ch) + (i >= locked ? ' scr' : '');
+      s.textContent = ch;
+      frag.appendChild(s);
+    });
+    sample.replaceChildren(frag);
+  };
+
+  bitsEl.textContent = Math.round(LEN * Math.log2(pool.length));
+
+  const run = () => {
+    const target = make();
+    if (reduce) { paint(target, LEN); return; }
+    const start = performance.now(), dur = 900;
+    const tick = now => {
+      const t = Math.min(1, (now - start) / dur);
+      const locked = Math.floor(t * LEN);
+      let shown = '';
+      for (let i = 0; i < LEN; i++) shown += i < locked ? target[i] : pool[Math.floor(Math.random() * pool.length)];
+      paint(shown, locked);
+      if (t < 1) requestAnimationFrame(tick); else paint(target, LEN);
+    };
+    requestAnimationFrame(tick);
+  };
+
+  run();
+  if (!reduce) setInterval(run, 4500);
+})();
+</script>
+</body>
+</html>
